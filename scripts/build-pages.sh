@@ -15,5 +15,6 @@ cp -R "$repo_root/viewer" "$destination/viewer"
 cp -R "$repo_root/generated" "$destination/generated"
 
 find "$destination" -name '.DS_Store' -delete
+touch "$destination/.nojekyll"
 
 echo "Built Pages artifact at $destination"

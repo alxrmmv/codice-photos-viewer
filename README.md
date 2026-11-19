@@ -20,3 +20,12 @@ Then open `http://127.0.0.1:4173/viewer/`.
 node --test viewer/tests/zoom.test.mjs
 bash scripts/verify-public-repo.sh
 ```
+
+## Publish
+
+GitHub Pages is served from the generated `gh-pages` branch. After verifying a
+change on `main`, publish it with:
+
+```bash
+bash scripts/publish-pages.sh
+```

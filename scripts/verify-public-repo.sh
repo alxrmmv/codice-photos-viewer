@@ -25,11 +25,11 @@ if [[ -n "$metadata_files" ]]; then
 fi
 
 required_paths=(
-  ".github/workflows/pages.yml"
   ".gitignore"
   "README.md"
   "index.html"
   "scripts/build-pages.sh"
+  "scripts/publish-pages.sh"
   "scripts/verify-public-repo.sh"
   "viewer/index.html"
   "viewer/zoom.js"
@@ -73,6 +73,16 @@ for path in index.html viewer/index.html viewer/zoom.js; do
     exit 1
   fi
 done
+
+if [[ ! -f "$pages_dir/.nojekyll" ]]; then
+  echo "FAIL: branch-based Pages artifact is missing .nojekyll" >&2
+  exit 1
+fi
+
+if git ls-files --error-unmatch ".github/workflows/pages.yml" >/dev/null 2>&1; then
+  echo "FAIL: custom Pages workflow must not be tracked while Actions runners are billing-locked" >&2
+  exit 1
+fi
 
 if [[ "$(find generated -type f ! -name '.DS_Store' | wc -l | tr -d ' ')" != "$(find "$pages_dir/generated" -type f | wc -l | tr -d ' ')" ]]; then
   echo "FAIL: Pages artifact does not contain every generated catalog image" >&2

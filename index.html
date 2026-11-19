@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=viewer/">
+  <title>Codice Photos Viewer</title>
+  <script>
+    const viewerUrl = new URL("viewer/", location.href);
+    viewerUrl.hash = location.hash;
+    location.replace(viewerUrl);
+  </script>
+</head>
+<body>
+  <p><a href="viewer/">Open the jacket image viewer</a></p>
+</body>
+</html>

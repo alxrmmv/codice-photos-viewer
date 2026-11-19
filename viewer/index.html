@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <link rel="icon" href="data:,">
+  <title>Jacket image review</title>
+  <style>
+    :root {
+      --ink: #1b1a18;
+      --muted: #6e6a63;
+      --canvas: #e9e7e1;
+      --paper: #f7f5f0;
+      --line: #c9c5bb;
+      --wine: #693128;
+      --wine-dark: #4d211c;
+      --brass: #b38a55;
+      --focus: #9b4a3c;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button,
+    select { font: inherit; }
+
+    button,
+    select,
+    .photo-button { outline: none; }
+
+    button:focus-visible,
+    select:focus-visible,
+    .photo-button:focus-visible {
+      box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--focus);
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(27, 26, 24, 0.96);
+      color: #fff;
+      border-bottom: 3px solid var(--brass);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      width: min(1760px, calc(100% - 40px));
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(220px, 0.72fr) minmax(240px, 0.8fr) minmax(320px, 1.48fr);
+      gap: 28px;
+      align-items: end;
+      padding: 18px 0 17px;
+    }
+
+    .identity { align-self: center; }
+
+    h1 {
+      margin: 0;
+      font-family: Didot, "Bodoni 72", "Times New Roman", serif;
+      font-size: clamp(24px, 2.2vw, 37px);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .identity p {
+      margin: 6px 0 0;
+      color: #c7c2b8;
+      font-size: 12px;
+      letter-spacing: 0.04em;
+    }
+
+    .control-label {
+      display: block;
+      margin-bottom: 7px;
+      color: #d4cfc5;
+      font-size: 12px;
+    }
+
+    select {
+      width: 100%;
+      height: 43px;
+      padding: 0 38px 0 13px;
+      border: 1px solid #5b5751;
+      border-radius: 4px;
+      background: #262522;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .color-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      min-height: 43px;
+    }
+
+    .color-button {
+      min-height: 43px;
+      padding: 0 14px;
+      border: 1px solid #5b5751;
+      border-radius: 4px;
+      background: transparent;
+      color: #e7e3dc;
+      cursor: pointer;
+      transition: background-color 130ms ease, border-color 130ms ease, color 130ms ease;
+    }
+
+    .color-button:hover { border-color: #aaa39a; }
+
+    .color-button[aria-pressed="true"] {
+      border-color: var(--brass);
+      background: var(--wine);
+      color: #fff;
+    }
+
+    main {
+      width: min(1760px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .selection-heading {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: baseline;
+      padding: 0 0 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .selection-heading h2 {
+      margin: 0;
+      font-family: Didot, "Bodoni 72", "Times New Roman", serif;
+      font-size: clamp(27px, 3vw, 48px);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+    }
+
+    .selection-heading p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .comparison {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .panel {
+      min-width: 0;
+      border-top: 4px solid var(--ink);
+    }
+
+    .panel.result { border-top-color: var(--wine); }
+
+    .panel-heading {
+      min-height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-heading h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      padding-top: 10px;
+    }
+
+    .photo-card {
+      min-width: 0;
+      background: var(--paper);
+      border: 1px solid #d4d0c7;
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .photo-button {
+      width: 100%;
+      display: block;
+      padding: 0;
+      border: 0;
+      background: #fdfcf9;
+      cursor: zoom-in;
+    }
+
+    .image-frame {
+      position: relative;
+      aspect-ratio: 4 / 5;
+      overflow: hidden;
+      background:
+        linear-gradient(45deg, #ece9e2 25%, transparent 25%) 0 0 / 18px 18px,
+        linear-gradient(45deg, transparent 75%, #ece9e2 75%) 0 0 / 18px 18px,
+        linear-gradient(45deg, transparent 75%, #ece9e2 75%) 9px -9px / 18px 18px,
+        linear-gradient(45deg, #ece9e2 25%, #f6f4ef 25%) 9px -9px / 18px 18px;
+    }
+
+    .image-frame img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      transition: transform 220ms ease;
+    }
+
+    .photo-button:hover img { transform: scale(1.018); }
+
+    .photo-meta {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 11px;
+      border-top: 1px solid #ddd9d0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .photo-meta strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .source .photo-meta span:last-child { font-variant-numeric: tabular-nums; }
+
+    dialog {
+      width: calc(100vw - 16px);
+      max-width: none;
+      height: calc(100vh - 16px);
+      max-height: none;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #151513;
+      color: #fff;
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+    }
+
+    dialog::backdrop { background: rgba(15, 14, 12, 0.82); }
+
+    .lightbox-shell {
+      height: 100%;
+      display: grid;
+      grid-template-rows: 48px minmax(0, 1fr) 38px;
+    }
+
+    .lightbox-bar,
+    .lightbox-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 16px;
+      border-color: #34332f;
+      border-style: solid;
+      border-width: 0 0 1px;
+    }
+
+    .lightbox-footer {
+      justify-content: center;
+      border-width: 1px 0 0;
+      color: #bbb6ad;
+      font-size: 13px;
+    }
+
+    .lightbox-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 14px;
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      border: 1px solid #514f49;
+      border-radius: 4px;
+      background: #24231f;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .lightbox-stage {
+      position: relative;
+      min-height: 0;
+      padding: 4px 52px;
+      overflow: hidden;
+    }
+
+    .zoom-viewport {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .lightbox-stage img {
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      object-fit: contain;
+      cursor: zoom-in;
+      transform-origin: var(--zoom-x, 50%) var(--zoom-y, 50%);
+      transition: transform 120ms ease-out;
+      will-change: transform;
+    }
+
+    .lightbox-stage img.is-zoomed {
+      transform: scale(2.5);
+      cursor: zoom-out;
+    }
+
+    .zoom-hint {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      z-index: 2;
+      translate: -50% 0;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+      background: rgba(20, 19, 17, 0.76);
+      color: #d9d5ce;
+      font-size: 12px;
+      pointer-events: none;
+      transition: opacity 120ms ease-out;
+    }
+
+    .zoom-viewport:has(img.is-zoomed) .zoom-hint {
+      opacity: 0;
+    }
+
+    .nav-button {
+      position: absolute;
+      top: 50%;
+      z-index: 3;
+      width: 42px;
+      height: 76px;
+      translate: 0 -50%;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+      background: rgba(20, 19, 17, 0.7);
+      color: #fff;
+      font-size: 32px;
+      cursor: pointer;
+    }
+
+    #lightbox-prev { left: 7px; }
+    #lightbox-next { right: 7px; }
+
+    .nav-button:hover { color: var(--brass); }
+
+    @media (max-width: 980px) {
+      .topbar { position: static; }
+
+      .topbar-inner {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .identity { grid-column: 1 / -1; }
+
+      .comparison { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .topbar-inner,
+      main { width: min(100% - 24px, 1760px); }
+
+      .topbar-inner {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+
+      .identity { grid-column: auto; }
+
+      .selection-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .selection-heading p { text-align: left; }
+
+      .photo-grid { grid-template-columns: 1fr; }
+
+      .lightbox-stage { padding: 4px 43px; }
+
+      .nav-button { width: 36px; }
+    }
+
+    @media (hover: none) {
+      .lightbox-stage img { cursor: default; }
+      .zoom-hint { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .image-frame img,
+      .lightbox-stage img,
+      .zoom-hint { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="identity">
+        <h1>Jacket image review</h1>
+        <p>Original photography compared with catalog redraws</p>
+      </div>
+
+      <label>
+        <span class="control-label">Jacket model</span>
+        <select id="model-select" aria-label="Jacket model"></select>
+      </label>
+
+      <div>
+        <span class="control-label">Color</span>
+        <div id="color-options" class="color-options" aria-label="Jacket color"></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="selection-heading">
+      <h2 id="selection-title"></h2>
+      <p id="selection-summary"></p>
+    </div>
+
+    <section class="comparison" aria-live="polite">
+      <section class="panel source" aria-labelledby="source-heading">
+        <div class="panel-heading">
+          <h3 id="source-heading">Source photography</h3>
+          <span id="source-count" class="count"></span>
+        </div>
+        <div id="source-grid" class="photo-grid"></div>
+      </section>
+
+      <section class="panel result" aria-labelledby="result-heading">
+        <div class="panel-heading">
+          <h3 id="result-heading">Generated catalog views</h3>
+          <span class="count">4 views</span>
+        </div>
+        <div id="result-grid" class="photo-grid"></div>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="lightbox" aria-labelledby="lightbox-title">
+    <div class="lightbox-shell">
+      <div class="lightbox-bar">
+        <div id="lightbox-title" class="lightbox-title"></div>
+        <button id="lightbox-close" class="icon-button" type="button" aria-label="Close image">✕</button>
+      </div>
+      <div class="lightbox-stage">
+        <button id="lightbox-prev" class="nav-button" type="button" aria-label="Previous image">‹</button>
+        <div class="zoom-viewport">
+          <img id="lightbox-image" alt="">
+          <div class="zoom-hint" aria-hidden="true">Hover over the image to inspect details</div>
+        </div>
+        <button id="lightbox-next" class="nav-button" type="button" aria-label="Next image">›</button>
+      </div>
+      <div id="lightbox-footer" class="lightbox-footer"></div>
+    </div>
+  </dialog>
+
+  <script src="zoom.js"></script>
+  <script>
+    const catalog = {
+      "Biker-quilted": {
+        label: "Biker quilted",
+        colors: {
+          "black": { label: "Black", sources: 1 },
+          "cognac": { label: "Cognac", sources: 15 },
+          "dark-brown": { label: "Dark brown", sources: 7 }
+        }
+      },
+      "Bomber-leather": {
+        label: "Leather bomber",
+        colors: {
+          "black": { label: "Black", sources: 8 },
+          "black-cognac-trim": { label: "Black / cognac trim", sources: 6 },
+          "cognac": { label: "Cognac", sources: 1 },
+          "dark-brown": { label: "Dark brown", sources: 1 }
+        }
+      },
+      "Hooded-leather": {
+        label: "Hooded leather",
+        colors: {
+          "black": { label: "Black", sources: 1 },
+          "cognac": { label: "Cognac", sources: 10 },
+          "dark-brown": { label: "Dark brown", sources: 7 }
+        }
+      },
+      "Suede-bomber": {
+        label: "Suede bomber",
+        colors: {
+          "brown": { label: "Brown", sources: 1 },
+          "dark-brown": { label: "Dark brown", sources: 14 },
+          "navy": { label: "Navy", sources: 1 },
+          "taupe": { label: "Taupe", sources: 10 }
+        }
+      },
+      "Suede-shirt": {
+        label: "Suede shirt",
+        colors: {
+          "beige": { label: "Beige", sources: 6 },
+          "navy": { label: "Navy", sources: 8 }
+        }
+      }
+    };
+
+    const resultViews = [
+      { key: "front", label: "Front" },
+      { key: "three-quarter-front", label: "Three-quarter front" },
+      { key: "back", label: "Rear" },
+      { key: "collar-detail", label: "Collar detail" }
+    ];
+
+    const modelSelect = document.querySelector("#model-select");
+    const colorOptions = document.querySelector("#color-options");
+    const sourceGrid = document.querySelector("#source-grid");
+    const resultGrid = document.querySelector("#result-grid");
+    const sourceCount = document.querySelector("#source-count");
+    const selectionTitle = document.querySelector("#selection-title");
+    const selectionSummary = document.querySelector("#selection-summary");
+
+    const lightbox = document.querySelector("#lightbox");
+    const lightboxImage = document.querySelector("#lightbox-image");
+    const lightboxTitle = document.querySelector("#lightbox-title");
+    const lightboxFooter = document.querySelector("#lightbox-footer");
+    const zoomController = JacketZoom.bind(lightboxImage, { zoomClass: "is-zoomed" });
+
+    let activeModel;
+    let activeColor;
+    let lightboxItems = [];
+    let lightboxIndex = 0;
+
+    function initialSelection() {
+      const [hashModel, hashColor] = decodeURIComponent(location.hash.slice(1)).split("/");
+      const model = catalog[hashModel] ? hashModel : Object.keys(catalog)[0];
+      const color = catalog[model].colors[hashColor]
+        ? hashColor
+        : Object.keys(catalog[model].colors)[0];
+      return { model, color };
+    }
+
+    function pad(number) {
+      return String(number).padStart(2, "0");
+    }
+
+    function sourcePath(model, color, index) {
+      return `source-previews/${model}/${color}/${model}_${color}_${pad(index)}.jpg`;
+    }
+
+    function resultPath(model, color, view) {
+      return `../generated/${model}/${color}/${model}_${color}_${view}_v1.png`;
+    }
+
+    function imageCard(item, index, kind) {
+      const article = document.createElement("article");
+      article.className = "photo-card";
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "photo-button";
+      button.dataset.lightboxIndex = index;
+      button.setAttribute("aria-label", `Open ${item.label}`);
+
+      const frame = document.createElement("span");
+      frame.className = "image-frame";
+      const image = document.createElement("img");
+      image.src = item.src;
+      image.alt = item.alt;
+      image.loading = "lazy";
+      image.decoding = "async";
+      frame.append(image);
+      button.append(frame);
+
+      const meta = document.createElement("div");
+      meta.className = "photo-meta";
+      const primary = document.createElement("strong");
+      primary.textContent = item.label;
+      const secondary = document.createElement("span");
+      secondary.textContent = kind === "source" ? `Photo ${pad(item.number)}` : "Generated";
+      meta.append(primary, secondary);
+
+      article.append(button, meta);
+      return article;
+    }
+
+    function renderModelOptions() {
+      modelSelect.replaceChildren();
+      Object.entries(catalog).forEach(([key, model]) => {
+        const option = document.createElement("option");
+        option.value = key;
+        option.textContent = model.label;
+        modelSelect.append(option);
+      });
+      modelSelect.value = activeModel;
+    }
+
+    function renderColorOptions() {
+      colorOptions.replaceChildren();
+      Object.entries(catalog[activeModel].colors).forEach(([key, color]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "color-button";
+        button.textContent = color.label;
+        button.dataset.color = key;
+        button.setAttribute("aria-pressed", String(key === activeColor));
+        colorOptions.append(button);
+      });
+    }
+
+    function renderPhotos() {
+      const model = catalog[activeModel];
+      const color = model.colors[activeColor];
+      selectionTitle.textContent = `${model.label} — ${color.label}`;
+      selectionSummary.textContent = `${color.sources} source ${color.sources === 1 ? "photo" : "photos"} · 4 generated views`;
+      sourceCount.textContent = `${color.sources} ${color.sources === 1 ? "photo" : "photos"}`;
+
+      const sources = Array.from({ length: color.sources }, (_, i) => ({
+        src: sourcePath(activeModel, activeColor, i + 1),
+        label: "Original",
+        number: i + 1,
+        alt: `${model.label}, ${color.label}, source photo ${i + 1}`,
+        group: "Source photography"
+      }));
+
+      const results = resultViews.map(view => ({
+        src: resultPath(activeModel, activeColor, view.key),
+        label: view.label,
+        alt: `${model.label}, ${color.label}, generated ${view.label.toLowerCase()} view`,
+        group: "Generated catalog views"
+      }));
+
+      lightboxItems = [...sources, ...results];
+      sourceGrid.replaceChildren(...sources.map((item, i) => imageCard(item, i, "source")));
+      resultGrid.replaceChildren(...results.map((item, i) => imageCard(item, sources.length + i, "result")));
+
+      document.querySelectorAll("[data-lightbox-index]").forEach(button => {
+        button.addEventListener("click", () => openLightbox(Number(button.dataset.lightboxIndex)));
+      });
+    }
+
+    function render() {
+      modelSelect.value = activeModel;
+      renderColorOptions();
+      renderPhotos();
+      history.replaceState(null, "", `#${encodeURIComponent(activeModel)}/${encodeURIComponent(activeColor)}`);
+    }
+
+    function openLightbox(index) {
+      lightboxIndex = index;
+      updateLightbox();
+      lightbox.showModal();
+    }
+
+    function updateLightbox() {
+      zoomController.reset();
+      const item = lightboxItems[lightboxIndex];
+      lightboxImage.src = item.src;
+      lightboxImage.alt = item.alt;
+      lightboxTitle.textContent = `${item.group} — ${item.label}`;
+      lightboxFooter.textContent = `${lightboxIndex + 1} of ${lightboxItems.length}`;
+    }
+
+    function moveLightbox(direction) {
+      lightboxIndex = (lightboxIndex + direction + lightboxItems.length) % lightboxItems.length;
+      updateLightbox();
+    }
+
+    modelSelect.addEventListener("change", () => {
+      activeModel = modelSelect.value;
+      activeColor = Object.keys(catalog[activeModel].colors)[0];
+      render();
+    });
+
+    colorOptions.addEventListener("click", event => {
+      const button = event.target.closest("[data-color]");
+      if (!button) return;
+      activeColor = button.dataset.color;
+      render();
+    });
+
+    document.querySelector("#lightbox-close").addEventListener("click", () => lightbox.close());
+    document.querySelector("#lightbox-prev").addEventListener("click", () => moveLightbox(-1));
+    document.querySelector("#lightbox-next").addEventListener("click", () => moveLightbox(1));
+
+    lightbox.addEventListener("click", event => {
+      if (event.target === lightbox) lightbox.close();
+    });
+
+    lightbox.addEventListener("close", () => zoomController.reset());
+
+    document.addEventListener("keydown", event => {
+      if (!lightbox.open) return;
+      if (event.key === "ArrowLeft") moveLightbox(-1);
+      if (event.key === "ArrowRight") moveLightbox(1);
+    });
+
+    const starting = initialSelection();
+    activeModel = starting.model;
+    activeColor = starting.color;
+    renderModelOptions();
+    render();
+  </script>
+</body>
+</html>

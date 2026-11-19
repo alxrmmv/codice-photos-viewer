@@ -1,0 +1,18 @@
+# This is a public deployment repository. Ignore the workspace by default and
+# allow only files that are safe and necessary for the viewer.
+/*
+
+!/.gitignore
+!/README.md
+!/index.html
+!/.github/
+!/.github/**
+!/scripts/
+!/scripts/**
+!/viewer/
+!/viewer/**
+!/generated/
+!/generated/**
+
+# Never publish operating-system metadata from otherwise allowed directories.
+**/.DS_Store

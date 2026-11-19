@@ -9,7 +9,7 @@ if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   exit 1
 fi
 
-allowed_path='^(.gitignore|README.md|index.html|.github/|scripts/|viewer/|generated/)'
+allowed_path='^(\.gitignore|README\.md|index\.html|\.github/|scripts/|viewer/|generated/)'
 unexpected="$(git ls-files | grep -Ev "$allowed_path" || true)"
 if [[ -n "$unexpected" ]]; then
   echo "FAIL: the public repository contains paths outside the allow-list:" >&2
@@ -25,8 +25,11 @@ if [[ -n "$metadata_files" ]]; then
 fi
 
 required_paths=(
+  ".github/workflows/pages.yml"
   ".gitignore"
   "README.md"
+  "index.html"
+  "scripts/build-pages.sh"
   "scripts/verify-public-repo.sh"
   "viewer/index.html"
   "viewer/zoom.js"
@@ -52,11 +55,28 @@ if ! diff -u "$workspace_files" "$tracked_files"; then
 fi
 
 while IFS= read -r path; do
-  size="$(stat -f '%z' "$path")"
+  size="$(wc -c <"$path" | tr -d ' ')"
   if (( size >= 100000000 )); then
     echo "FAIL: tracked file exceeds GitHub's 100 MB limit: $path" >&2
     exit 1
   fi
 done < <(git ls-files)
+
+pages_dir="$(mktemp -d)"
+trap 'rm -f "$workspace_files" "$tracked_files"; rm -rf "$pages_dir"' EXIT
+
+bash scripts/build-pages.sh "$pages_dir"
+
+for path in index.html viewer/index.html viewer/zoom.js; do
+  if [[ ! -f "$pages_dir/$path" ]]; then
+    echo "FAIL: Pages artifact is missing: $path" >&2
+    exit 1
+  fi
+done
+
+if [[ "$(find generated -type f ! -name '.DS_Store' | wc -l | tr -d ' ')" != "$(find "$pages_dir/generated" -type f | wc -l | tr -d ' ')" ]]; then
+  echo "FAIL: Pages artifact does not contain every generated catalog image" >&2
+  exit 1
+fi
 
 echo "PASS: public repository boundary is safe"
